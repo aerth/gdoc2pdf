@@ -29,6 +29,8 @@ import (
 	"golang.org/x/net/html"
 )
 
+var Version = "v0.0.1"
+
 var needDocLink = "" +
 	"link to google docs document is required, for example:\n" +
 	"gdoc2pdf https://docs.google.com/document/d/123456...789/view"
@@ -36,12 +38,20 @@ var needDocLink = "" +
 func main() {
 	log.SetFlags(0)
 	var (
-		proxyflag  = flag.String("proxy", "", "example: socks5://127.0.0.1:1080")
-		forceFlag  = flag.Bool("f", false, "overwrite existing files")
-		outputName = flag.String("o", "", "output filename (derived from document if blank)")
+		proxyflag   = flag.String("proxy", "", "example: socks5://127.0.0.1:1080")
+		forceFlag   = flag.Bool("f", false, "overwrite existing files")
+		outputName  = flag.String("o", "", "output filename (derived from document if blank)")
+		versionFlag = flag.Bool("version", false, "print version and exit")
 	)
 
 	flag.Parse()
+
+	if *versionFlag {
+		log.Println("gdoc2pdf " + Version)
+		log.Println("source: https://github.com/aerth/gdoc2pdf")
+		os.Exit(0)
+	}
+
 	if flag.NArg() == 0 {
 		log.Fatalln(needDocLink)
 	}
@@ -49,7 +59,7 @@ func main() {
 	// use proxy if --proxy is set
 	httpclient := tgun.Client{
 		Proxy:     *proxyflag,
-		UserAgent: "gdocs2pdf/1.0",
+		UserAgent: "gdoc2pdf/" + Version,
 	}
 	args := flag.Args()
 	for i, v := range args {
