@@ -29,7 +29,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-var Version = "v0.0.1"
+var Version = "v0.0.2"
 
 var needDocLink = "" +
 	"link to google docs document is required, for example:\n" +
