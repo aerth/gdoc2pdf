@@ -73,7 +73,7 @@ func main() {
 			log.Fatalln(needDocLink)
 
 		}
-		if paths[0] != "document" {
+		if paths[0] != "document" && paths[0] != "spreadsheets" {
 			log.Println("need '/document' in URL prefix")
 			log.Fatalln(needDocLink)
 		}
@@ -81,7 +81,7 @@ func main() {
 			log.Println("need '/document/d/' in URL prefix")
 			log.Fatalln(needDocLink)
 		}
-		if !(paths[3] == "edit" || paths[3] == "view" || paths[3] == "copy") {
+		if paths[3] != "" && !(paths[3] == "edit" || paths[3] == "view" || paths[3] == "copy") {
 			log.Println("need '/edit', '/view', or '/copy' in URL suffix")
 			log.Fatalln(needDocLink)
 		}
@@ -105,8 +105,8 @@ func main() {
 		}
 
 		// build link
-		link := fmt.Sprintf("https://docs.google.com/document/"+
-			"export?format=pdf&id=%s&includes_info_params=false", paths[2])
+		link := fmt.Sprintf("https://docs.google.com/%s/"+
+			"export?format=pdf&id=%s&includes_info_params=false", paths[0], paths[2])
 
 		// start fetch pdf
 		log.Printf("Downloading PDF document: %q (%q)", filename, flag.Args())
