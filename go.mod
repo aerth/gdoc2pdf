@@ -1,4 +1,4 @@
-module github.com/aerth/gdocs2pdf
+module github.com/aerth/gdoc2pdf
 
 go 1.14
 
