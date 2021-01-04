@@ -42,6 +42,7 @@ func main() {
 		forceFlag   = flag.Bool("f", false, "overwrite existing files")
 		outputName  = flag.String("o", "", "output filename (derived from document if blank)")
 		versionFlag = flag.Bool("version", false, "print version and exit")
+		renameFlag  = flag.Bool("a", false, "archive mode, will save to disk without rewriting")
 	)
 
 	flag.Parse()
@@ -51,9 +52,17 @@ func main() {
 		log.Println("source: https://github.com/aerth/gdoc2pdf")
 		os.Exit(0)
 	}
-
-	if flag.NArg() == 0 {
-		log.Fatalln(needDocLink)
+	args := flag.Args()
+	if len(args) == 0 {
+		var doclink = ""
+		fmt.Fprintf(os.Stderr, "Enter a google document link: ")
+		fmt.Scanf("%s", &doclink)
+		fmt.Fprintf(os.Stderr, "Is this accurate?            %q\nPress Y or N: ", doclink)
+		yesno := ""
+		fmt.Scanf("%s", &yesno)
+		if strings.HasPrefix(strings.ToLower(yesno), "y") {
+			args = []string{doclink}
+		}
 	}
 
 	// use proxy if --proxy is set
@@ -61,12 +70,11 @@ func main() {
 		Proxy:     *proxyflag,
 		UserAgent: "gdoc2pdf/" + Version,
 	}
-	args := flag.Args()
-	for i, v := range args {
+	for documentNumber, documentURL := range args {
 		// fetch document ID
-		u, err := url.Parse(v)
+		u, err := url.Parse(documentURL)
 		if err != nil {
-			log.Fatalf("error parsing arg %d: %v", i+1, err)
+			log.Fatalf("error parsing arg %d: %v", documentNumber+1, err)
 		}
 		paths := strings.Split(strings.TrimPrefix(u.Path, "/"), "/")
 		if len(paths) != 4 {
@@ -91,25 +99,44 @@ func main() {
 		if *outputName != "" {
 			filename = *outputName
 		} else {
-			filename, err = fetchFileName(httpclient, v)
+			// initial GET for title
+			filename, err = fetchFileName(httpclient, documentURL)
 			if err != nil {
 				log.Fatalln("error fetching title:", err)
 			}
-			filename += ".pdf"
-			log.Println("Parsed title:", filename)
+			//		filename += ".pdf"
+			log.Println("Parsed title:", filename+".pdf")
 		}
 
 		// check if filename exists
-		if _, err := os.Open(filename); err == nil && !*forceFlag {
-			log.Fatalln("filename already exists and -f flag not used. not overwriting.")
+		_, err = os.Open(filename + ".pdf")
+		if err == nil && !*forceFlag && !*renameFlag {
+			log.Fatalln("filename already exists and -f flag not used. not overwriting. try -a to automatically save with suffix.")
+		}
+		if err == nil && *renameFlag {
+			log.Println("found existing filename. will add suffix")
+			for try := 1; try > 0; try++ {
+				name := fmt.Sprintf("%s.%d.pdf", filename, try)
+				fmt.Fprintf(os.Stderr, "..%d.", try)
+				if _, err := os.Open(name); err == nil {
+					continue
+				}
+				filename = name
+				break
+			}
+			fmt.Fprintf(os.Stderr, " ")
 		}
 
+		if *outputName != "" || !strings.HasSuffix(filename, ".pdf") {
+			log.Println("adding suffix pdf", filename)
+			filename += ".pdf"
+		}
+		log.Printf("Saving PDF document: %q", filename)
 		// build link
 		link := fmt.Sprintf("https://docs.google.com/%s/"+
 			"export?format=pdf&id=%s&includes_info_params=false", paths[0], paths[2])
 
 		// start fetch pdf
-		log.Printf("Downloading PDF document: %q (%q)", filename, flag.Args())
 		resp, err := httpclient.Get(link)
 		defer resp.Body.Close()
 
@@ -125,11 +152,12 @@ func main() {
 		if err != nil {
 			log.Fatalln("couldn't create pdf file locally:", err)
 		}
-
 		n, err := io.Copy(f, resp.Body)
 		if err != nil {
+			f.Close()
 			log.Fatalln("error downloading pdf:", err)
 		}
+		f.Close()
 		log.Printf("saved PDF %q (%d bytes)", filename, n)
 	}
 }
