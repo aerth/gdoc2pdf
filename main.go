@@ -81,10 +81,11 @@ func main() {
 			log.Fatalln(needDocLink)
 
 		}
-		if paths[0] != "document" && paths[0] != "spreadsheets" {
-			log.Println("need '/document' in URL prefix")
-			log.Fatalln(needDocLink)
-		}
+		/*	if paths[0] != "document" && paths[0] != "spreadsheets" {
+				log.Println("need '/document' in URL prefix")
+				log.Fatalln(needDocLink)
+			}
+		*/
 		if paths[1] != "d" {
 			log.Println("need '/document/d/' in URL prefix")
 			log.Fatalln(needDocLink)
