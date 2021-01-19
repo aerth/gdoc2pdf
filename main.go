@@ -139,11 +139,10 @@ func main() {
 
 		// start fetch pdf
 		resp, err := httpclient.Get(link)
-		defer resp.Body.Close()
-
 		if err != nil {
 			log.Fatalln("fetching URL:", err)
 		}
+		defer resp.Body.Close()
 		if resp.StatusCode != 200 {
 			log.Fatalf("fetching URL: %q (%d)", resp.Status, resp.StatusCode)
 		}
